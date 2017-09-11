@@ -8,6 +8,8 @@ import numpy as np
 import tensorflow as tf
 layers = tf.layers
 # from scipy.stats import norm
+import pandas as pd
+import seaborn as sb
 
 
 # Config.
@@ -39,12 +41,11 @@ out_dim = data_dim
 activation = tf.nn.elu
 total_num_runs = 400101
 
-# Set up true, training data.
+# Set up true, training data. Data comes from generate_posterior_sample.py.
 UNNORMED_DATA = np.load('mcmc_samples.npy')
 num_data = len(UNNORMED_DATA)
 var_maxs = UNNORMED_DATA.max(axis=0)
 DATA = UNNORMED_DATA / var_maxs
-# DATA = DATA[:, [3, 1, 4, 2, 0]]
 DATA_names = ['intercept', 'age', 'age2', 'educ', 'hours']
 
 
@@ -150,9 +151,15 @@ for i in range(total_num_runs):
             ax[var_idx].set_title(DATA_names[var_idx])
             ax[var_idx].legend()
             ax[var_idx].set_xlim([min(betas_data), max(betas_data)])
-
         plt.suptitle('GAN-learned posterior distributions: iter{}'.format(i))
         plt.savefig('var_cdfs_i{}'.format(i))
+
+        # Plot pairwise plot to check covariances.
+        if i < 200:
+            pp_data = sb.pairplot(pd.DataFrame(DATA, columns=DATA_names))
+            pp_data.savefig('data_cov.png')
+        pp_data = sb.pairplot(pd.DataFrame(g_out, columns=DATA_names))
+        pp_data.savefig('gen_cov_{}.png'.format(i))
 
         if i > 0:
             elapsed_time = time() - start_time
